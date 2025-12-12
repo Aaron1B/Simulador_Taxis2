@@ -1,9 +1,7 @@
-# cliente.py
 import threading
 import time
 import random
 
-# Definimos el tamaño de la red aquí también para generar coordenadas válidas
 GRID_SIZE = 25 
 
 class Cliente(threading.Thread):
@@ -15,27 +13,16 @@ class Cliente(threading.Thread):
 
     def run(self):
         while not self.parar:
-            # Espera aleatoria antes de pedir taxi
-            time.sleep(random.uniform(2, 6))
-            
+            time.sleep(random.uniform(2, 6)) # Espera aleatoria antes de pedir
             if self.parar: break
 
-            # Generar coordenadas dentro de la red 25x25 (0 a 24)
-            origen = (random.randint(0, GRID_SIZE-1), random.randint(0, GRID_SIZE-1))
+            origen = (random.randint(0, GRID_SIZE-1), random.randint(0, GRID_SIZE-1)) # Coordenadas 0-24
             destino = (random.randint(0, GRID_SIZE-1), random.randint(0, GRID_SIZE-1))
-            
-            # Evitar viajes donde origen == destino
-            while origen == destino:
-                destino = (random.randint(0, GRID_SIZE-1), random.randint(0, GRID_SIZE-1))
+            while origen == destino: destino = (random.randint(0, GRID_SIZE-1), random.randint(0, GRID_SIZE-1)) # Evitar mismo sitio
 
-            # Solicitar servicio
-            taxi = self.sistema_central.match_cliente_taxi(self.id, origen, destino)
+            taxi = self.sistema_central.match_cliente_taxi(self.id, origen, destino) # Solicitar servicio
             
             if taxi:
-                # Esperar a que el taxi termine (polling simple)
-                while not taxi.esta_libre and taxi.cliente_actual == self.id:
-                    time.sleep(0.1)
-                
-                # Calificar
-                calificacion = random.randint(3, 5) # Clientes suelen ser generosos
+                while not taxi.esta_libre and taxi.cliente_actual == self.id: time.sleep(0.1) # Esperar fin del viaje
+                calificacion = random.randint(3, 5) 
                 self.sistema_central.recibir_reporte_calidad(self.id, taxi.id, calificacion)
