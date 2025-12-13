@@ -16,7 +16,6 @@ class Cliente(threading.Thread):
             time.sleep(random.uniform(2, 6))
             if self.parar: break
 
-            # Generar coordenadas distintas
             origen = (random.randint(0, GRID_SIZE-1), random.randint(0, GRID_SIZE-1))
             destino = origen
             while destino == origen:
@@ -24,9 +23,7 @@ class Cliente(threading.Thread):
 
             taxi = self.sistema.match_cliente_taxi(self.id, origen, destino)
             
-            # Polling simple de espera
             if taxi:
                 while not taxi.esta_libre and taxi.cliente == self.id:
                     time.sleep(0.1)
-                # Calificar (ahora solo un número directo)
                 self.sistema.recibir_reporte_calidad(self.id, taxi.id, random.randint(3, 5))

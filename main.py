@@ -7,7 +7,6 @@ from cliente import Cliente
 def obtener_entradas():
     print("\n--- CONFIGURACIÓN DE SIMULACIÓN ---")
     try:
-        # Uso de comprensión de lista para inputs (opcional, pero ahorra espacio visual)
         return int(input("Taxis Automáticos (N): ")), \
                int(input("Clientes (M): ")), \
                int(input("Días a simular: "))
@@ -22,7 +21,6 @@ def ejecutar_simulacion():
     aceptados, candidato = 0, 1
 
     while aceptados < cupo_taxis:
-        # Generación compacta de datos
         datos_cond = {
             'nombre': f"Bot_{candidato}", 
             'antecedentes_penales': random.random() < 0.15,
@@ -44,13 +42,11 @@ def ejecutar_simulacion():
 
     print(f"\nCupo completado. {aceptados} taxis listos.\n" + "-"*60)
 
-    # Inicio de Clientes
     clientes = [Cliente(f"C{i+1}", sistema) for i in range(num_clientes)]
     for c in clientes:
         c.daemon = True
         c.start()
 
-    # Bucle Principal
     for dia in range(1, num_dias + 1):
         print(f"\n=== INICIO DÍA {dia} ===")
         for hora in range(6, 25): 
@@ -63,7 +59,6 @@ def ejecutar_simulacion():
         print(f"FIN DEL DÍA {dia}: Recuento...")
         sistema.balance_final_dia()
 
-    # Fase de Apagado
     print("\nDeteniendo flota para Balance Global...")
     for c in clientes: c.parar = True
     for t in sistema.taxis_registrados: t.parar = True
