@@ -3,109 +3,76 @@ import random
 import sys
 from sistema_central import SistemaCentral
 from cliente import Cliente
-from taxi import Taxi 
-
-GRID_SIZE = 25
-
-def menu_afiliacion(sistema):
-    # (El menú manual se mantiene igual, lo omito para ahorrar espacio)
-    # ... Si copias el archivo completo, asegúrate de mantener esta función ...
-    while True:
-        print("\n🗂️ --- OFICINA DE AFILIACIÓN UNIETAXI ---")
-        opcion = input("¿Desea afiliar un nuevo taxi manualmente? (s/n): ").lower()
-        if opcion != 's': break
-        
-        # ... (Lógica de input manual anterior) ...
-        # Para el ejemplo completo, mantén el código que te di en la respuesta anterior
-        break
 
 def obtener_entradas():
-    print("\n🚖 --- CONFIGURACIÓN DE SIMULACIÓN --- 🚖")
+    print("\n--- CONFIGURACIÓN DE SIMULACIÓN ---")
     try:
-        n_taxis = int(input("Cupo de Taxis Automáticos (N): "))
-        m_clientes = int(input("Clientes (M): "))
-        dias = int(input("Días a simular: "))
-        return n_taxis, m_clientes, dias
+        # Uso de comprensión de lista para inputs (opcional, pero ahorra espacio visual)
+        return int(input("Taxis Automáticos (N): ")), \
+               int(input("Clientes (M): ")), \
+               int(input("Días a simular: "))
     except ValueError:
         return 5, 5, 1 
 
 def ejecutar_simulacion():
-    # 1. Crear Sistema Central vacío
-    sistema = SistemaCentral(taxis_iniciales=[])
-
-    # 2. Fase de Afiliación Manual (Opcional)
-    # menu_afiliacion(sistema) # Descomentar si quieres usarlo
-
-    # 3. Configuración y Generación Automática con RECHAZOS
+    sistema = SistemaCentral()
     cupo_taxis, num_clientes, num_dias = obtener_entradas()
     
-    print(f"\n⚙️ Iniciando proceso de selección para {cupo_taxis} vacantes de taxis...")
-    
-    taxis_aceptados = 0
-    candidato_n = 1
+    print(f"\nIniciando selección para {cupo_taxis} vacantes...")
+    aceptados, candidato = 0, 1
 
-    # Intentamos generar candidatos hasta llenar el cupo
-    while taxis_aceptados < cupo_taxis:
-        
-        # --- GENERACIÓN DE DATOS CON PROBABILIDAD DE FALLO ---
-        # 15% de probabilidad de tener antecedentes penales
-        tiene_antecedentes = random.random() < 0.15
-        
-        # 10% de probabilidad de tener licencia vencida
-        licencia_ok = random.random() > 0.10
-        
-        # 5% de probabilidad de tener el seguro vencido
-        seguro_ok = random.random() > 0.05
-
-        conductor = {
-            'nombre': f"Bot_Candidato_{candidato_n}", 
-            'antecedentes_penales': tiene_antecedentes, 
-            'licencia_vigente': licencia_ok, 
+    while aceptados < cupo_taxis:
+        # Generación compacta de datos
+        datos_cond = {
+            'nombre': f"Bot_{candidato}", 
+            'antecedentes_penales': random.random() < 0.15,
+            'licencia_vigente': random.random() > 0.10, 
             'certificado_medico': True
         }
-        
-        vehiculo = {
+        datos_veh = {
             'modelo': random.choice(['Toyota', 'Ford', 'Chevrolet', 'Nissan']), 
             'placa': f"BOT-{random.randint(100,999)}", 
-            'seguro_al_dia': seguro_ok, 
+            'seguro_al_dia': random.random() > 0.05, 
             'impuestos_pagos': True
         }
         
-        # Intentamos afiliar
-        exito = sistema.procesar_afiliacion(conductor, vehiculo)
-        
-        if exito:
-            taxis_aceptados += 1
+        if sistema.procesar_afiliacion(datos_cond, datos_veh):
+            aceptados += 1
         else:
-            print(f"   ⚠️ El candidato Bot_{candidato_n} fue descartado. Buscando otro...")
-            time.sleep(0.2) # Pausa dramática pequeña
-            
-        candidato_n += 1
+            time.sleep(0.05)
+        candidato += 1
 
-    print(f"\n✅ Cupo completado. {taxis_aceptados} taxis listos para trabajar.")
-    print("------------------------------------------------------------")
+    print(f"\nCupo completado. {aceptados} taxis listos.\n" + "-"*60)
 
-    # 4. Iniciar Clientes
-    clientes = [Cliente(f"C{j+1}", sistema) for j in range(num_clientes)]
+    # Inicio de Clientes
+    clientes = [Cliente(f"C{i+1}", sistema) for i in range(num_clientes)]
     for c in clientes:
         c.daemon = True
         c.start()
 
-    # 5. Bucle Principal (Igual que antes)
+    # Bucle Principal
     for dia in range(1, num_dias + 1):
-        print(f"\n📅 === INICIO DÍA {dia} ===")
+        print(f"\n=== INICIO DÍA {dia} ===")
         for hora in range(6, 25): 
             sistema.actualizar_tiempo(dia, hora)
-            print(f"\n⌚ --- {hora}:00 H ---")
+            print(f"\n--- {hora}:00 H ---")
             time.sleep(1.0) 
 
-        print("⏸️  Pausando actividad para registrar logs finales...")
-        time.sleep(1.0) 
-        
-        print(f"🌙 FIN DEL DÍA {dia}: Realizando recuento y balance...")
+        print("Pausando para cierre del día...")
+        time.sleep(1.5) 
+        print(f"FIN DEL DÍA {dia}: Recuento...")
         sistema.balance_final_dia()
 
-    print("\n🏁 Fin de la simulación. Cerrando sistema...")
+    # Fase de Apagado
+    print("\nDeteniendo flota para Balance Global...")
+    for c in clientes: c.parar = True
+    for t in sistema.taxis_registrados: t.parar = True
+
+    print("Finalizando trayectos pendientes...")
+    time.sleep(3) 
+
+    print("\nSimulación finalizada. Generando Balance Global...")
+    sistema.balance_global_simulacion()
     sys.exit()
 
 if __name__ == "__main__":
